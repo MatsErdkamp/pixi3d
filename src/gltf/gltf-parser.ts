@@ -79,9 +79,11 @@ export class glTFParser {
     }
     let bufferView = this._descriptor.bufferViews[accessor.bufferView || 0];
     let offset = accessor.byteOffset || 0;
+
     if (bufferView.byteOffset !== undefined) {
       offset += bufferView.byteOffset;
     }
+
     let size = accessor.count * componentCount[accessor.type];
     if (bufferView.byteStride !== undefined && bufferView.byteStride !== 0) {
       size =
@@ -96,7 +98,7 @@ export class glTFParser {
     if (bufferView.extensions?.EXT_meshopt_compression != undefined) {
       const meshoptExtension = bufferView.extensions.EXT_meshopt_compression;
       buffer = this.decodeMeshoptBuffer(meshoptExtension);
-      offset = 0;
+      offset = accessor.byteOffset || 0;
     }
 
     return glTFAttribute.from(
