@@ -26,6 +26,7 @@ export class glTFParser {
   private _asset: glTFAsset;
   private _materialFactory: MaterialFactory;
   private _descriptor: any;
+  private _decompressedBuffers: Map<number, ArrayBuffer>;
 
   /**
    * Creates a new parser using the specified asset.
@@ -36,6 +37,7 @@ export class glTFParser {
     this._asset = asset;
     this._materialFactory = materialFactory || new StandardMaterialFactory();
     this._descriptor = this._asset.descriptor;
+    this._decompressedBuffers = new Map<number, ArrayBuffer>();
     if (asset.textures.length === 0) {
       for (let i = 0; i < this._descriptor.textures?.length; i++) {
         asset.textures.push(this.parseTexture(i));
@@ -97,7 +99,7 @@ export class glTFParser {
 
     if (bufferView.extensions?.EXT_meshopt_compression != undefined) {
       const meshoptExtension = bufferView.extensions.EXT_meshopt_compression;
-      buffer = this.decodeMeshoptBuffer(meshoptExtension);
+      buffer = this.decodeMeshoptBuffer(meshoptExtension, accessor.bufferView);
       offset = accessor.byteOffset || 0;
     }
 
@@ -117,15 +119,23 @@ export class glTFParser {
   /**
    * Uses meshoptimizer to decode a 'EXT_meshopt_compression' buffer.
    * @param meshoptExtension The extension.EXT_meshopt_compression Object.
+   * @param bufferViewIndex The accessor's bufferViewIndex to use as a cache key.
    */
-  decodeMeshoptBuffer(meshoptExtension: any) {
+
+  decodeMeshoptBuffer(
+    meshoptExtension: any,
+    bufferViewIndex: number
+  ): ArrayBuffer {
+    if (this._decompressedBuffers.has(bufferViewIndex)) {
+      return this._decompressedBuffers.get(bufferViewIndex) as ArrayBuffer;
+    }
+
     let meshoptBuffer = this._asset.buffers[meshoptExtension.buffer];
     const byteOffset = meshoptExtension.byteOffset || 0;
     const byteLength = meshoptExtension.byteLength || meshoptBuffer.byteLength;
     const count = meshoptExtension.count;
     const stride = meshoptExtension.byteStride;
 
-    // Decode the buffer using MeshoptDecoder
     const resultBuffer = new Uint8Array(count * stride);
 
     MeshoptDecoder.decodeGltfBuffer(
@@ -137,7 +147,10 @@ export class glTFParser {
       meshoptExtension.filter
     );
 
-    return resultBuffer.buffer;
+    const resultArrayBuffer = resultBuffer.buffer;
+    this._decompressedBuffers.set(bufferViewIndex, resultArrayBuffer);
+
+    return resultArrayBuffer;
   }
 
   /**
