@@ -11,7 +11,7 @@ control.enableDamping = true;
 
 app.loader.add("assets/chromatic/diffuse.cubemap");
 app.loader.add("assets/chromatic/specular.cubemap");
-app.loader.add("assets/teapot/teapot-meshopt.glb");
+app.loader.add("assets/teapot/teapot.gltf");
 
 app.loader.load((_, resources) => {
   PIXI3D.LightingEnvironment.main.imageBasedLighting =
@@ -21,7 +21,7 @@ app.loader.load((_, resources) => {
     );
 
   let model = app.stage.addChild(
-    PIXI3D.Model.from(resources["assets/teapot/teapot-meshopt.glb"].gltf)
+    PIXI3D.Model.from(resources["assets/teapot/teapot.gltf"].gltf)
   );
   model.y = -0.8;
   model.meshes.forEach((mesh) => {
