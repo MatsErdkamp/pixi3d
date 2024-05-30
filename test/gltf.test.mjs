@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import { MeshoptDecoder } from "meshoptimizer";
 
 describe("glTF", () => {
   it("should render separate correctly using pixi *.*.*", async () => {
@@ -52,7 +53,9 @@ describe("glTF", () => {
   it("should render meshopt correctly using pixi *.*.*", async () => {
     let render = (renderer, resources) => {
       let model = PIXI3D.Model.from(
-        resources["assets/teapot/teapot-binary-meshopt.glb"].gltf
+        resources["assets/teapot/teapot-binary-meshopt.glb"].gltf,
+        undefined,
+        MeshoptDecoder
       );
       model.y = -0.8;
       model.meshes.forEach((mesh) => {
