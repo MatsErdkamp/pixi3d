@@ -25,8 +25,8 @@ export class Model extends Container3D {
    * @param source The source to create the model from.
    * @param materialFactory The factory to use for creating materials.
    */
-  static from(source: glTFAsset, materialFactory?: MaterialFactory) {
-    return glTFParser.createModel(source, materialFactory)
+  static from(source: glTFAsset, materialFactory?: MaterialFactory, meshoptDecoder ?: any) {
+    return glTFParser.createModel(source, materialFactory, meshoptDecoder)
   }
 
   /**

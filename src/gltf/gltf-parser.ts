@@ -17,7 +17,6 @@ import { Skin } from "../skinning/skin";
 import { Joint } from "../skinning/joint";
 import { StandardMaterialFactory } from "../material/standard/standard-material-factory";
 import { glTFChannelFactory } from "./animation/gltf-channel-factory";
-import { MeshoptDecoder } from "meshoptimizer";
 
 /**
  * Parses glTF assets and creates models and meshes.
@@ -27,16 +26,19 @@ export class glTFParser {
   private _materialFactory: MaterialFactory;
   private _descriptor: any;
   private _decompressedBuffers: Map<number, ArrayBuffer>;
+  private _meshoptDecoder: any;
 
   /**
    * Creates a new parser using the specified asset.
    * @param asset The asset to parse.
    * @param materialFactory The material factory to use.
+   * @param meshoptDecoder optionally provide meshoptDecoder to parse meshopt meshes.
    */
-  constructor(asset: glTFAsset, materialFactory?: MaterialFactory) {
+  constructor(asset: glTFAsset, materialFactory?: MaterialFactory, meshoptDecoder?: any) {
     this._asset = asset;
     this._materialFactory = materialFactory || new StandardMaterialFactory();
     this._descriptor = this._asset.descriptor;
+    this._meshoptDecoder = meshoptDecoder;
     this._decompressedBuffers = new Map<number, ArrayBuffer>();
     if (asset.textures.length === 0) {
       for (let i = 0; i < this._descriptor.textures?.length; i++) {
@@ -50,8 +52,8 @@ export class glTFParser {
    * @param asset The asset to create the model from.
    * @param materialFactory The material factory to use.
    */
-  static createModel(asset: glTFAsset, materialFactory?: MaterialFactory) {
-    return new glTFParser(asset, materialFactory).parseModel();
+  static createModel(asset: glTFAsset, materialFactory?: MaterialFactory, meshoptDecoder ?: any) {
+    return new glTFParser(asset, materialFactory, meshoptDecoder).parseModel();
   }
 
   /**
@@ -98,6 +100,12 @@ export class glTFParser {
     let buffer = this._asset.buffers[bufferView.buffer];
 
     if (bufferView.extensions?.EXT_meshopt_compression != undefined) {
+
+      if (this._meshoptDecoder == undefined) {
+        console.error('Buffer uses EXT_meshopt_compression but meshoptDecoder is not provided.');
+        return;
+      }
+
       const meshoptExtension = bufferView.extensions.EXT_meshopt_compression;
       buffer = this.decodeMeshoptBuffer(meshoptExtension, accessor.bufferView);
       offset = accessor.byteOffset || 0;
@@ -138,7 +146,7 @@ export class glTFParser {
 
     const resultBuffer = new Uint8Array(count * stride);
 
-    MeshoptDecoder.decodeGltfBuffer(
+    this._meshoptDecoder.decodeGltfBuffer(
       resultBuffer,
       count,
       stride,
